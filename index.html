@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IndiAI Studio — AI Content Workspace</title>
+<meta name="description" content="A single-file AI content creation workspace powered by an OpenAI-compatible API.">
+<style>
+:root{
+  --bg:#070b12;--panel:#0d131d;--panel2:#111a27;--line:#1d2938;
+  --text:#eef4ff;--muted:#8e9bad;--accent:#7c5cff;--accent2:#24d6a3;
+  --danger:#ff667d;--shadow:0 20px 60px rgba(0,0,0,.35);--radius:18px
+}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+.app{display:flex;min-height:100vh}.sidebar{width:260px;border-right:1px solid var(--line);background:#090e16;padding:20px;position:fixed;inset:0 auto 0 0;z-index:20;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:20px;margin-bottom:28px}.logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),#a98cff);box-shadow:0 10px 30px rgba(124,92,255,.28)}
+.nav{display:grid;gap:7px}.nav button{border:0;background:transparent;color:var(--muted);text-align:left;padding:12px 13px;border-radius:12px}.nav button:hover,.nav button.active{background:#121a27;color:var(--text)}
+.sidebar-bottom{margin-top:auto}.status{border:1px solid var(--line);border-radius:14px;padding:13px;background:#0c131e}.status small{color:var(--muted);display:block;margin-bottom:6px}.dot{display:inline-block;width:8px;height:8px;background:var(--accent2);border-radius:50%;margin-right:6px}
+.main{margin-left:260px;width:calc(100% - 260px)}.topbar{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;background:rgba(7,11,18,.86);backdrop-filter:blur(14px);z-index:10}
+.topbar h1{font-size:18px;margin:0}.top-actions{display:flex;gap:9px}.icon-btn,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;padding:10px 14px}.btn.primary{border-color:transparent;background:linear-gradient(135deg,var(--accent),#9b7dff);font-weight:750}.btn.green{background:var(--accent2);color:#03120e;border:0;font-weight:800}.btn.danger{color:#ff9aaa}
+.content{padding:28px;max-width:1400px;margin:auto}.page{display:none}.page.active{display:block}
+.hero{padding:28px;border:1px solid var(--line);background:radial-gradient(circle at 85% 15%,rgba(124,92,255,.17),transparent 35%),var(--panel);border-radius:24px;box-shadow:var(--shadow);margin-bottom:22px}.hero h2{font-size:34px;margin:0 0 9px}.hero p{color:var(--muted);max-width:750px;margin:0;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}.card h3{margin:0 0 8px;font-size:15px}.metric{font-size:28px;font-weight:850}.muted{color:var(--muted)}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}.tool{padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:18px}.tool h3{margin:0 0 7px}.tool p{color:var(--muted);font-size:13px;line-height:1.5}.tool button{margin-top:10px}
+.workspace{display:grid;grid-template-columns:360px 1fr;gap:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}.panel h2{font-size:17px;margin:0 0 16px}.field{margin-bottom:14px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#080d15;color:var(--text);border-radius:11px;padding:11px 12px;outline:none}.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}textarea{min-height:110px;resize:vertical}
+.prompt-box{min-height:250px}.result{min-height:520px;white-space:pre-wrap;line-height:1.7;color:#e9eff9}.result.empty{display:grid;place-items:center;color:#657184;text-align:center}.result-wrap{position:relative}.result-tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.templates{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.template{border:1px solid var(--line);background:#0a1018;color:var(--text);padding:10px;border-radius:10px;text-align:left;font-size:12px}.template:hover{border-color:var(--accent)}
+.row{display:flex;gap:9px;align-items:center}.row>*{flex:1}.row .fit{flex:0 0 auto}
+table{width:100%;border-collapse:collapse}th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{color:var(--muted)}
+.history-item{padding:14px;border:1px solid var(--line);background:var(--panel);border-radius:13px;margin-bottom:10px}.history-item strong{display:block;margin-bottom:5px}.history-item small{color:var(--muted)}
+.empty-state{padding:50px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:18px}
+.notice{padding:12px 14px;border:1px solid #594a19;background:#18150b;color:#d8c57d;border-radius:12px;font-size:12px;line-height:1.5;margin-bottom:14px}
+.success{color:#7df0c9}.error{color:#ff9aaa}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;place-items:center;z-index:50;padding:20px}.modal.open{display:grid}.modal-card{width:min(620px,100%);background:#0c131d;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.toast{position:fixed;right:20px;bottom:20px;background:#111a27;border:1px solid var(--line);padding:12px 15px;border-radius:12px;display:none;z-index:100}.toast.show{display:block}
+.mobile-menu{display:none}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}.tools{grid-template-columns:repeat(2,1fr)}.workspace{grid-template-columns:1fr}}
+@media(max-width:760px){.sidebar{transform:translateX(-100%);transition:.2s}.sidebar.open{transform:translateX(0)}.main{margin-left:0;width:100%}.mobile-menu{display:block}.content{padding:16px}.topbar{padding:0 16px}.hero h2{font-size:26px}.grid,.tools{grid-template-columns:1fr}.templates{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><div class="logo">✦</div>IndiAI Studio</div>
+  <nav class="nav">
+    <button class="active" data-page="dashboard">⌂ Dashboard</button>
+    <button data-page="create">✦ AI Creator</button>
+    <button data-page="history">◷ History</button>
+    <button data-page="pricing">◇ Pricing</button>
+    <button data-page="settings">⚙ Settings</button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="status"><small>API connection</small><span class="dot"></span><span id="apiStatus">Not configured</span></div>
+  </div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+  <div class="row"><button class="icon-btn mobile-menu" id="menuBtn">☰</button><h1 id="pageTitle">Dashboard</h1></div>
+  <div class="top-actions"><button class="btn" id="settingsBtn">API Settings</button><button class="btn primary" data-page-jump="create">Create with AI</button></div>
+</header>
+
+<div class="content">
+
+<section class="page active" id="page-dashboard">
+  <div class="hero">
+    <h2>Create content. Grow faster.</h2>
+    <p>Generate social posts, reel scripts, YouTube content, product copy and business ideas in Hindi, Hinglish or English from one workspace.</p>
+    <div style="margin-top:18px"><button class="btn primary" data-page-jump="create">Start creating →</button></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>Generations</h3><div class="metric" id="metricGenerations">0</div><span class="muted">stored locally</span></div>
+    <div class="card"><h3>Saved history</h3><div class="metric" id="metricHistory">0</div><span class="muted">on this device</span></div>
+    <div class="card"><h3>Language</h3><div class="metric">3</div><span class="muted">Hindi / Hinglish / English</span></div>
+    <div class="card"><h3>Model</h3><div class="metric" style="font-size:20px">GPT-4o-mini</div><span class="muted">configurable</span></div>
+  </div>
+  <div class="tools">
+    <div class="tool"><h3>📱 Social Media</h3><p>Instagram captions, carousel copy, hooks and promotional posts.</p><button class="btn" data-tool="Instagram Post">Open</button></div>
+    <div class="tool"><h3>🎬 Reels & Shorts</h3><p>Hooks, scripts, scenes, CTAs and short-form content ideas.</p><button class="btn" data-tool="Reel Script">Open</button></div>
+    <div class="tool"><h3>▶ YouTube</h3><p>Video titles, descriptions, scripts, hooks and SEO ideas.</p><button class="btn" data-tool="YouTube Script">Open</button></div>
+    <div class="tool"><h3>🛍 Product Copy</h3><p>Product descriptions, benefits, ad copy and sales angles.</p><button class="btn" data-tool="Product Description">Open</button></div>
+    <div class="tool"><h3>✍ Blog / Article</h3><p>Structured long-form drafts with headings and calls to action.</p><button class="btn" data-tool="Blog Article">Open</button></div>
+    <div class="tool"><h3>💡 Business Ideas</h3><p>Generate practical India-focused product and marketing ideas.</p><button class="btn" data-tool="Business Ideas">Open</button></div>
+  </div>
+</section>
+
+<section class="page" id="page-create">
+  <div class="workspace">
+    <div class="panel">
+      <h2>AI Creator</h2>
+      <div class="notice">For a public production website, do not expose a shared API key in client-side JavaScript. This single-file version is intended for personal/testing use.</div>
+      <div class="field"><label>Content type</label><select id="contentType">
+        <option>Instagram Post</option><option>Reel Script</option><option>YouTube Script</option><option>YouTube Title & Description</option><option>Product Description</option><option>Blog Article</option><option>Ad Copy</option><option>Business Ideas</option><option>Custom</option>
+      </select></div>
+      <div class="field"><label>Language</label><select id="language"><option>Hindi</option><option>Hinglish</option><option>English</option></select></div>
+      <div class="field"><label>Topic / product / business</label><input id="topic" placeholder="e.g. AI video editor for Indian creators"></div>
+      <div class="field"><label>Audience</label><input id="audience" placeholder="e.g. Indian small business owners"></div>
+      <div class="field"><label>Tone</label><select id="tone"><option>Professional</option><option>Friendly</option><option>Persuasive</option><option>Premium</option><option>Viral</option><option>Simple</option></select></div>
+      <div class="field"><label>Extra instructions</label><textarea id="extra" placeholder="Add any specific requirements..."></textarea></div>
+      <div class="field"><label>Quick templates</label><div class="templates">
+        <button class="template" data-template="viral">Viral hook + CTA</button>
+        <button class="template" data-template="sales">Sales copy</button>
+        <button class="template" data-template="educate">Educational</button>
+        <button class="template" data-template="story">Storytelling</button>
+      </div></div>
+      <button class="btn primary" id="generateBtn" style="width:100%">✦ Generate</button>
+    </div>
+    <div class="panel result-wrap">
+      <div class="result-tools">
+        <button class="btn" id="copyBtn">Copy</button><button class="btn" id="downloadBtn">Download TXT</button><button class="btn" id="clearBtn">Clear</button>
+        <span class="muted" id="genStatus"></span>
+      </div>
+      <div id="result" class="result empty">Your generated content will appear here.</div>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="page-history">
+  <div class="panel">
+    <div class="row"><div><h2>Generation History</h2><span class="muted">Saved only in this browser.</span></div><button class="btn danger fit" id="clearHistory">Clear all</button></div>
+    <div id="historyList" style="margin-top:18px"></div>
+  </div>
+</section>
+
+<section class="page" id="page-pricing">
+  <div class="hero"><h2>Simple plans for your SaaS</h2><p>This section is UI only. Connect your own authentication, database and payment provider before charging customers.</p></div>
+  <div class="tools">
+    <div class="tool"><h3>Free</h3><div class="metric">₹0</div><p>10 generations / month<br>Basic templates<br>Hindi + English</p><button class="btn">Current plan</button></div>
+    <div class="tool"><h3>Creator</h3><div class="metric">₹299</div><p>300 generations / month<br>All templates<br>History & exports</p><button class="btn primary">Choose plan</button></div>
+    <div class="tool"><h3>Pro</h3><div class="metric">₹999</div><p>1,500 generations / month<br>Priority processing<br>Business features</p><button class="btn primary">Choose plan</button></div>
+  </div>
+</section>
+
+<section class="page" id="page-settings">
+  <div class="panel" style="max-width:760px">
+    <h2>API Settings</h2>
+    <div class="notice">Your API key is stored in this browser's localStorage when you enable “remember”. Never put a real secret key into a public GitHub repository or public HTML file.</div>
+    <div class="field"><label>API endpoint</label><input id="apiEndpoint" value="https://api.openai.com/v1/chat/completions"></div>
+    <div class="field"><label>API key</label><input id="apiKey" type="password" placeholder="Paste your API key here"></div>
+    <div class="field"><label>Model</label><input id="model" value="gpt-4o-mini"></div>
+    <div class="field"><label>System instruction</label><textarea id="systemPrompt">You are a helpful professional content assistant. Produce accurate, useful, original content. Follow the user's language, audience and tone. Do not claim guaranteed results.</textarea></div>
+    <label style="display:flex;gap:9px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:16px"><input type="checkbox" id="rememberKey" checked> Remember API key on this device</label>
+    <div class="row"><button class="btn primary fit" id="saveSettings">Save settings</button><button class="btn fit" id="testApi">Test connection</button></div>
+    <p id="settingsMsg" class="muted"></p>
+  </div>
+</section>
+
+</div>
+</main>
+</div>
+
+<div class="modal" id="modal"><div class="modal-card"><div class="row"><h2 style="margin:0">API Settings</h2><button class="btn fit" id="closeModal">Close</button></div><p class="muted">Configure the endpoint, key and model used by the creator.</p><button class="btn primary" id="modalGoSettings" style="width:100%">Open Settings</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const STORE = {
+  settings:"indiaistudio_settings_v1",
+  history:"indiaistudio_history_v1",
+  generations:"indiaistudio_generations_v1"
+};
+
+const defaults = {
+  endpoint:"https://api.openai.com/v1/chat/completions",
+  model:"gpt-4o-mini",
+  key:"",
+  remember:true,
+  system:"You are a helpful professional content assistant. Produce accurate, useful, original content. Follow the user's language, audience and tone. Do not claim guaranteed results."
+};
+
+let settings = loadSettings();
+let history = JSON.parse(localStorage.getItem(STORE.history) || "[]");
+let currentOutput = "";
+
+function loadSettings(){
+  try{return {...defaults,...JSON.parse(localStorage.getItem(STORE.settings)||"{}")}}catch{return {...defaults}}
+}
+function saveSettingsData(){
+  const data={endpoint:$("#apiEndpoint").value.trim(),model:$("#model").value.trim(),remember:$("#rememberKey").checked,system:$("#systemPrompt").value};
+  if(data.remember) data.key=$("#apiKey").value.trim();
+  else data.key="";
+  settings=data;
+  localStorage.setItem(STORE.settings,JSON.stringify(data));
+  updateStatus();
+}
+function updateStatus(){
+  const hasKey=!!settings.key;
+  $("#apiStatus").textContent=hasKey ? "Configured" : "Not configured";
+}
+function toast(msg){
+  const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600);
+}
+function showPage(name){
+  $$(".page").forEach(p=>p.classList.remove("active"));
+  $("#page-"+name).classList.add("active");
+  $$(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
+  const title={dashboard:"Dashboard",create:"AI Creator",history:"History",pricing:"Pricing",settings:"Settings"}[name]||"Dashboard";
+  $("#pageTitle").textContent=title;
+  if(innerWidth<761) $("#sidebar").classList.remove("open");
+  if(name==="history") renderHistory();
+  if(name==="dashboard") updateMetrics();
+}
+function updateMetrics(){
+  $("#metricGenerations").textContent=localStorage.getItem(STORE.generations)||"0";
+  $("#metricHistory").textContent=history.length;
+}
+function buildPrompt(){
+  const type=$("#contentType").value, lang=$("#language").value, topic=$("#topic").value.trim();
+  const audience=$("#audience").value.trim(), tone=$("#tone").value, extra=$("#extra").value.trim();
+  if(!topic) throw new Error("Please enter a topic, product or business.");
+  return `Create ${type}.
+
+Language: ${lang}
+Topic/Product/Business: ${topic}
+Audience: ${audience || "General audience"}
+Tone: ${tone}
+Extra instructions: ${extra || "None"}
+
+Requirements:
+- Make the output practical and ready to use.
+- Match the requested language naturally.
+- Avoid fake statistics, guaranteed income claims, or unsupported facts.
+- For social content, include a strong hook and clear CTA where appropriate.
+- For scripts, structure the output with useful sections/scenes.
+- Do not explain your process; provide the requested content directly.`;
+}
+async function generate(){
+  try{
+    if(!settings.key) { showPage("settings"); toast("Add your API key in Settings first."); return; }
+    const prompt=buildPrompt();
+    $("#generateBtn").disabled=true;$("#generateBtn").textContent="Generating…";$("#genStatus").textContent="Working…";
+    $("#result").classList.remove("empty");$("#result").textContent="";
+    const res=await fetch(settings.endpoint || defaults.endpoint,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+settings.key},
+      body:JSON.stringify({
+        model:settings.model||"gpt-4o-mini",
+        messages:[{role:"system",content:settings.system||defaults.system},{role:"user",content:prompt}],
+        temperature:0.7
+      })
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data?.error?.message || `Request failed (${res.status})`);
+    currentOutput=data?.choices?.[0]?.message?.content || "";
+    if(!currentOutput) throw new Error("The API returned no text.");
+    $("#result").textContent=currentOutput;
+    $("#genStatus").textContent="Done";
+    const item={id:Date.now(),type:$("#contentType").value,topic:$("#topic").value.trim(),language:$("#language").value,output:currentOutput,date:new Date().toLocaleString()};
+    history.unshift(item);history=history.slice(0,100);localStorage.setItem(STORE.history,JSON.stringify(history));
+    localStorage.setItem(STORE.generations,String(Number(localStorage.getItem(STORE.generations)||0)+1));
+    updateMetrics();
+  }catch(e){
+    $("#result").classList.add("empty");$("#result").textContent=e.message||"Something went wrong.";$("#genStatus").textContent="Error";toast(e.message||"Generation failed");
+  }finally{$("#generateBtn").disabled=false;$("#generateBtn").textContent="✦ Generate";}
+}
+function renderHistory(){
+  const el=$("#historyList");
+  if(!history.length){el.innerHTML='<div class="empty-state">No generations yet.</div>';return}
+  el.innerHTML=history.map(x=>`<div class="history-item">
+    <strong>${esc(x.type)} — ${esc(x.topic)}</strong><small>${esc(x.language)} · ${esc(x.date)}</small>
+    <div style="margin-top:10px;color:#c9d3e4;white-space:pre-wrap;max-height:150px;overflow:auto">${esc(x.output)}</div>
+    <div style="margin-top:10px"><button class="btn" onclick="loadHistory(${x.id})">Open</button></div>
+  </div>`).join("");
+}
+function loadHistory(id){
+  const x=history.find(h=>h.id===id);if(!x)return;
+  $("#contentType").value=x.type;$("#language").value=x.language;$("#topic").value=x.topic;
+  currentOutput=x.output;$("#result").classList.remove("empty");$("#result").textContent=x.output;showPage("create");
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function downloadText(){
+  if(!currentOutput){toast("Nothing to download.");return}
+  const blob=new Blob([currentOutput],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="indiaistudio-content.txt";a.click();URL.revokeObjectURL(a.href);
+}
+function applyTemplate(name){
+  const map={
+    viral:["Instagram Post","Hinglish","Create a viral social post around my topic with a powerful first-line hook, concise value, and CTA.","Viral"],
+    sales:["Ad Copy","Hinglish","Write persuasive sales copy with benefits, objections, urgency without fake claims, and CTA.","Persuasive"],
+    educate:["Instagram Post","Hindi","Create an educational post that explains the topic simply with an example.","Professional"],
+    story:["Reel Script","Hinglish","Create a short storytelling script with hook, problem, turning point, solution and CTA.","Friendly"]
+  };
+  const x=map[name];$("#contentType").value=x[0];$("#language").value=x[1];$("#extra").value=x[2];$("#tone").value=x[3];showPage("create");
+}
+function fillSettings(){
+  $("#apiEndpoint").value=settings.endpoint||defaults.endpoint;
+  $("#apiKey").value=settings.key||"";
+  $("#model").value=settings.model||defaults.model;
+  $("#rememberKey").checked=settings.remember!==false;
+  $("#systemPrompt").value=settings.system||defaults.system;
+}
+$$(".nav button").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+$$("[data-page-jump]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageJump)));
+$$("[data-tool]").forEach(b=>b.addEventListener("click",()=>{$("#contentType").value=b.dataset.tool;showPage("create")}));
+$$(".template").forEach(b=>b.addEventListener("click",()=>applyTemplate(b.dataset.template)));
+$("#generateBtn").addEventListener("click",generate);
+$("#copyBtn").addEventListener("click",async()=>{if(!currentOutput){toast("Nothing to copy.");return}try{await navigator.clipboard.writeText(currentOutput);toast("Copied.");}catch{toast("Copy failed.");}});
+$("#downloadBtn").addEventListener("click",downloadText);
+$("#clearBtn").addEventListener("click",()=>{$("#result").classList.add("empty");$("#result").textContent="Your generated content will appear here.";currentOutput="";$("#genStatus").textContent=""});
+$("#saveSettings").addEventListener("click",()=>{saveSettingsData();$("#settingsMsg").textContent="Settings saved.";$("#settingsMsg").className="success";toast("Settings saved.")});
+$("#testApi").addEventListener("click",async()=>{
+  saveSettingsData();
+  if(!settings.key){toast("Add an API key first.");return}
+  $("#settingsMsg").textContent="Testing…";$("#settingsMsg").className="muted";
+  try{
+    const r=await fetch(settings.endpoint,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+settings.key},body:JSON.stringify({model:settings.model||"gpt-4o-mini",messages:[{role:"user",content:"Reply with exactly: API connection works."}],max_tokens:20})});
+    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d?.error?.message||`HTTP ${r.status}`);
+    $("#settingsMsg").textContent="Connection successful.";$("#settingsMsg").className="success";toast("API connection works.");
+  }catch(e){$("#settingsMsg").textContent=e.message;$("#settingsMsg").className="error";toast("Connection failed.");}
+});
+$("#clearHistory").addEventListener("click",()=>{if(confirm("Delete all local history?")){history=[];localStorage.removeItem(STORE.history);renderHistory();updateMetrics();}});
+$("#settingsBtn").addEventListener("click",()=>showPage("settings"));
+$("#menuBtn").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
+$("#modalGoSettings").addEventListener("click",()=>{$("#modal").classList.remove("open");showPage("settings")});
+$("#closeModal").addEventListener("click",()=>$("#modal").classList.remove("open"));
+fillSettings();updateStatus();updateMetrics();
+</script>
+</body>
+</html>
